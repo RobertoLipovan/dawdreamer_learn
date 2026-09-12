@@ -1,0 +1,831 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Preset Rack</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#eeece2; --panel:#e2ded0; --panel-2:#d6d1bf; --border:#c9c3ae;
+  --text:#2a2620; --text-dim:#6b6455;
+  --accent:#b5701f; --accent-ink:#fff8ec;
+  --cat-pads:#6a5bc4; --cat-bass:#b8481f; --cat-leads:#12808c; --cat-pluck:#4c8f3d;
+  --radius:10px;
+  --font-display:"Big Shoulders Display", "Arial Narrow", sans-serif;
+  --font-body:"IBM Plex Sans", system-ui, sans-serif;
+  --font-mono:"IBM Plex Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1b1a17; --panel:#262420; --panel-2:#302d26; --border:#3a3730;
+    --text:#ede7da; --text-dim:#9c9686;
+    --accent:#d98e3f; --accent-ink:#2a1a05;
+    --cat-pads:#9184e0; --cat-bass:#e07a4f; --cat-leads:#5cc9d6; --cat-pluck:#86c975;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1b1a17; --panel:#262420; --panel-2:#302d26; --border:#3a3730;
+  --text:#ede7da; --text-dim:#9c9686;
+  --accent:#d98e3f; --accent-ink:#2a1a05;
+  --cat-pads:#9184e0; --cat-bass:#e07a4f; --cat-leads:#5cc9d6; --cat-pluck:#86c975;
+}
+
+*{ box-sizing:border-box; }
+body{
+  margin:0; background:var(--bg); color:var(--text); font-family:var(--font-body);
+  padding-inline:16px; padding-block:16px 140px;
+}
+h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
+::selection{ background:var(--accent); color:var(--accent-ink); }
+
+.app{ max-width:1080px; margin:0 auto; display:flex; flex-direction:column; gap:28px; }
+
+/* ---------- header ---------- */
+.masthead{
+  display:flex; flex-wrap:wrap; gap:20px; align-items:center; justify-content:space-between;
+  border-bottom:1px solid var(--border); padding-bottom:18px;
+}
+.masthead-title{ display:flex; flex-direction:column; gap:4px; min-width:220px; }
+.eyebrow{
+  font-family:var(--font-mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--text-dim);
+}
+.masthead-title h1{ font-size:clamp(32px,6vw,44px); font-weight:800; letter-spacing:.01em; }
+.masthead-desc{ font-size:14px; color:var(--text-dim); max-width:60ch; margin:2px 0 0; }
+
+.scope-wrap{
+  background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+  padding:8px; flex:1 1 260px; max-width:420px;
+}
+#scope{ display:block; width:100%; height:64px; }
+
+.master-controls{ display:flex; flex-direction:column; gap:8px; font-family:var(--font-mono); font-size:11px; }
+.master-controls label{ display:flex; align-items:center; gap:8px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; }
+.master-controls input[type=range]{ width:110px; accent-color:var(--accent); }
+.audio-hint{ font-family:var(--font-mono); font-size:11px; color:var(--accent); }
+
+/* ---------- racks ---------- */
+.rack{ display:flex; flex-direction:column; gap:12px; }
+.rack-head{
+  display:flex; align-items:baseline; gap:10px; border-left:4px solid var(--cat); padding-left:10px;
+}
+.rack-head h2{ font-size:22px; font-weight:800; color:var(--cat); }
+.rack-count{ font-family:var(--font-mono); font-size:11px; color:var(--text-dim); }
+.module-grid{
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:10px;
+}
+
+.module{
+  background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+  padding:10px 12px; display:flex; flex-direction:column; gap:8px;
+  border-top:3px solid var(--cat); transition:border-color .15s ease, box-shadow .15s ease;
+}
+.module.armed{ box-shadow:0 0 0 2px var(--cat) inset; }
+.module-top{ display:flex; align-items:center; gap:8px; }
+.module-top svg{ flex:none; color:var(--cat); }
+.module h3{ font-size:17px; font-weight:600; font-family:var(--font-body); letter-spacing:.01em; }
+.module-desc{ font-size:12px; color:var(--text-dim); margin:0; line-height:1.35; min-height:2.6em; }
+.module-actions{ display:flex; gap:6px; margin-top:auto; }
+
+button{ font-family:var(--font-body); cursor:pointer; }
+.btn{
+  border:1px solid var(--border); background:var(--panel-2); color:var(--text);
+  border-radius:6px; padding:6px 9px; font-size:12px; font-weight:500;
+}
+.btn:hover{ border-color:var(--cat); }
+.btn:focus-visible{ outline:2px solid var(--cat); outline-offset:1px; }
+.btn-arm{ flex:1; }
+.btn-arm[data-armed="1"]{ background:var(--cat); color:var(--accent-ink); border-color:var(--cat); }
+.btn-demo{ font-family:var(--font-mono); }
+
+/* ---------- keyboard dock ---------- */
+.keyboard-dock{
+  position:fixed; left:0; right:0; bottom:0; background:var(--panel); border-top:1px solid var(--border);
+  padding:10px 16px calc(10px + env(safe-area-inset-bottom));
+  display:flex; flex-direction:column; gap:6px; align-items:center;
+}
+.armed-info{ display:flex; gap:8px; align-items:center; font-size:12px; font-family:var(--font-mono); }
+.armed-label{ color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; }
+#armedName{ font-weight:600; font-size:13px; }
+.cat-tag{
+  font-size:10px; text-transform:uppercase; letter-spacing:.06em; padding:2px 6px; border-radius:4px;
+  color:var(--accent-ink); background:var(--tagcolor,var(--accent));
+}
+.keyboard{
+  display:flex; position:relative; height:84px; width:360px; max-width:100%;
+  overflow-x:auto; touch-action:none; user-select:none;
+}
+.key{
+  position:relative; flex:0 0 36px; width:36px; height:100%; background:#faf6ec;
+  border:1px solid #b9b2a0; border-radius:0 0 5px 5px; color:#6b6455;
+  display:flex; align-items:flex-end; justify-content:center; padding-bottom:6px;
+  font-family:var(--font-mono); font-size:10px;
+}
+.key.black{
+  position:absolute; top:0; width:22px; height:58%; background:#2a2620; border:1px solid #000;
+  border-radius:0 0 4px 4px; z-index:2; color:#cfc8b8;
+}
+.key.active{ background:var(--accent); color:var(--accent-ink); }
+.key.black.active{ background:var(--accent); }
+.kb-hint{ font-size:11px; color:var(--text-dim); font-family:var(--font-mono); }
+
+footer.credits{ text-align:center; font-size:11px; color:var(--text-dim); font-family:var(--font-mono); }
+
+@media (max-width:480px){
+  .masthead{ flex-direction:column; align-items:flex-start; }
+  .scope-wrap{ max-width:none; width:100%; }
+}
+@media (prefers-reduced-motion:reduce){ *{ transition:none !important; } }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="masthead">
+    <div class="masthead-title">
+      <span class="eyebrow">dawdreamer_learn &middot; patch browser</span>
+      <h1>Preset Rack</h1>
+      <p class="masthead-desc">Puerto en Web Audio API de los 33 patches Faust de <code>pads/</code>, <code>bass/</code>, <code>leads/</code> y <code>pluck/</code> &mdash; aproximaciones, no el DSP literal. Arma un patch y tocalo, o dale a Demo para oir el loop de 4 acordes/patrones a 100&nbsp;BPM.</p>
+      <span class="audio-hint" id="audioHint">Toca cualquier tecla o pulsa Demo para activar el audio</span>
+    </div>
+    <div class="scope-wrap"><canvas id="scope" width="480" height="64"></canvas></div>
+    <div class="master-controls">
+      <label>Master <input type="range" id="masterVol" min="0" max="1" step="0.01" value="0.85"></label>
+      <label>Reverb <input type="range" id="masterVerb" min="0" max="1" step="0.01" value="0.35"></label>
+      <label>Delay <input type="range" id="masterDelay" min="0" max="1" step="0.01" value="0.2"></label>
+    </div>
+  </header>
+
+  <main id="racks"></main>
+
+  <footer class="credits">notas: Am&ndash;F&ndash;C&ndash;G a 100&nbsp;BPM, igual que en los render offline de <code>*/common.py</code></footer>
+</div>
+
+<footer class="keyboard-dock">
+  <div class="armed-info">
+    <span class="armed-label">Armado</span>
+    <span id="armedName">&mdash;</span>
+    <span class="cat-tag" id="armedCat"></span>
+  </div>
+  <div class="keyboard" id="keyboard"></div>
+  <span class="kb-hint">Teclado: A&ndash;; (blancas) &middot; W E T Y U O P (negras) &middot; o toca las teclas</span>
+</footer>
+
+<script>
+"use strict";
+
+/* =====================================================================
+   MOTOR DE AUDIO (Web Audio API) -- traduccion aproximada de los DSP
+   Faust del repo. Reglas de envolvente que siguen la semantica real de
+   Faust: en.adsr(a,d,s,r,gate) mantiene "sustain" mientras el gate esta
+   activo y solo libera al soltar la nota (aqui: envs con `sustain`
+   definido). en.ar(a,r,gate) es un trigger de un solo disparo: sube y
+   BAJA solo, ignorando cuanto se mantenga pulsada la nota (aqui: envs
+   SIN `sustain`, shape percusiva -- asi es como estan escritos todos
+   los patches de bass/ y pluck/ en Python).
+===================================================================== */
+
+let actx=null, masterGain=null, limiter=null, analyser=null;
+let reverbNode=null, reverbOut=null, delayNode=null, delayFeedback=null, delayOut=null;
+let noiseBuffer=null;
+const els = {};
+
+function midiToFreq(m){ return 440*Math.pow(2,(m-69)/12); }
+
+function makeDistCurve(amount){
+  const n=1024, curve=new Float32Array(n);
+  for(let i=0;i<n;i++){ const x=i/(n-1)*2-1; curve[i]=Math.tanh(x*amount)/Math.tanh(amount); }
+  return curve;
+}
+
+function ensureAudio(){
+  if(actx) return;
+  actx = new (window.AudioContext||window.webkitAudioContext)();
+
+  masterGain = actx.createGain(); masterGain.gain.value = parseFloat(els.masterVol.value);
+  limiter = actx.createWaveShaper(); limiter.curve = makeDistCurve(1.6); limiter.oversample="2x";
+  analyser = actx.createAnalyser(); analyser.fftSize = 1024;
+  masterGain.connect(limiter); limiter.connect(analyser); analyser.connect(actx.destination);
+
+  reverbNode = actx.createConvolver(); reverbNode.buffer = makeImpulse(2.6, 3.0);
+  reverbOut = actx.createGain(); reverbOut.gain.value = parseFloat(els.masterVerb.value);
+  reverbNode.connect(reverbOut); reverbOut.connect(masterGain);
+
+  delayNode = actx.createDelay(1.2); delayNode.delayTime.value = 0.28;
+  delayFeedback = actx.createGain(); delayFeedback.gain.value = 0.3;
+  delayOut = actx.createGain(); delayOut.gain.value = parseFloat(els.masterDelay.value);
+  delayNode.connect(delayFeedback); delayFeedback.connect(delayNode);
+  delayNode.connect(delayOut); delayOut.connect(masterGain);
+
+  noiseBuffer = makeNoiseBuffer(2.0);
+  els.audioHint.style.display="none";
+  requestAnimationFrame(drawScope);
+}
+
+function makeImpulse(duration, decay){
+  const rate=actx.sampleRate, len=Math.floor(rate*duration);
+  const buf=actx.createBuffer(2,len,rate);
+  for(let ch=0; ch<2; ch++){
+    const data=buf.getChannelData(ch);
+    for(let i=0;i<len;i++) data[i]=(Math.random()*2-1)*Math.pow(1-i/len,decay);
+  }
+  return buf;
+}
+function makeNoiseBuffer(duration){
+  const len=Math.floor(actx.sampleRate*duration);
+  const buf=actx.createBuffer(1,len,actx.sampleRate);
+  const data=buf.getChannelData(0);
+  for(let i=0;i<len;i++) data[i]=Math.random()*2-1;
+  return buf;
+}
+
+/* ---- envolvente generica sobre un AudioParam --------------------- */
+// env = {attack, decay=0, sustain, release}. Sin `sustain` => shape AR
+// (dispara y suelta solo). Con `sustain` => shape ADSR (se mantiene
+// hasta que se llama release()).
+function scheduleEnv(param, t0, env, base, peak, fixedDur){
+  param.cancelScheduledValues(t0);
+  param.setValueAtTime(base, t0);
+  const decay = env.decay||0;
+  const hasSustain = env.sustain!=null;
+  const sustainLevel = hasSustain? env.sustain : 1;
+  param.linearRampToValueAtTime(base+peak, t0+env.attack);
+  const afterDecay = t0+env.attack+decay;
+  if(decay>0) param.linearRampToValueAtTime(base+peak*sustainLevel, afterDecay);
+
+  if(!hasSustain){
+    param.setValueAtTime(base+peak, afterDecay);
+    param.linearRampToValueAtTime(base, afterDecay+env.release);
+    return { auto:true, end: afterDecay+env.release };
+  }
+  if(fixedDur!=null){
+    const offAt = Math.max(afterDecay, t0+fixedDur);
+    param.setValueAtTime(base+peak*sustainLevel, offAt);
+    param.linearRampToValueAtTime(base, offAt+env.release);
+    return { auto:true, end: offAt+env.release };
+  }
+  return { auto:false, release(tOff){
+    if(param.cancelAndHoldAtTime) param.cancelAndHoldAtTime(tOff);
+    else { param.cancelScheduledValues(tOff); param.setValueAtTime(base+peak*sustainLevel, tOff); }
+    param.linearRampToValueAtTime(base, tOff+env.release);
+  }};
+}
+
+/* ---- construccion de una voz a partir de un spec ------------------ */
+function buildVoice(spec, midiNote, t0, fixedDur){
+  const freq = midiToFreq(midiNote);
+  const toneBus = actx.createGain(); toneBus.gain.value=1;
+  const live = []; // nodos con .stop(time)
+  const releaseFns = []; // controles ADSR con hold abierto (nota sostenida por teclado)
+  const ends = [t0]; // instantes finales de controles auto-completos (AR o ADSR con fixedDur)
+
+  function osc(type, f, gainVal, dest){
+    const o=actx.createOscillator(); o.type=type; o.frequency.setValueAtTime(f,t0);
+    const g=actx.createGain(); g.gain.value=gainVal;
+    o.connect(g); g.connect(dest||toneBus); o.start(t0); live.push(o);
+    return {node:o, gain:g};
+  }
+  function lfoTo(param, rate, depth, offset){
+    const l=actx.createOscillator(); l.type="sine"; l.frequency.value=rate;
+    const g=actx.createGain(); g.gain.value=depth;
+    l.connect(g); g.connect(param); l.start(t0); live.push(l);
+    if(offset!=null) param.setValueAtTime(offset, t0);
+  }
+  function noiseLayer(filterType, freqHz, Q, gainVal, dest){
+    const src=actx.createBufferSource(); src.buffer=noiseBuffer; src.loop=true;
+    let node=src;
+    if(filterType){
+      const f=actx.createBiquadFilter(); f.type=filterType; f.frequency.value=freqHz; f.Q.value=Q||1;
+      src.connect(f); node=f;
+    }
+    const g=actx.createGain(); g.gain.value=gainVal;
+    node.connect(g); g.connect(dest||toneBus); src.start(t0); live.push(src);
+    return {gain:g};
+  }
+
+  // --- osciladores base ---
+  (spec.osc||[]).forEach(o=>{
+    const built = osc(o.type, freq*o.ratio, o.gain);
+    if(o.tremolo){
+      const tg=actx.createGain(); tg.gain.value=0.5;
+      built.gain.disconnect(); built.gain.connect(tg); tg.connect(toneBus);
+      lfoTo(tg.gain, o.tremolo.rate, 0.5);
+    }
+  });
+  if(spec.sub) osc(spec.sub.type, freq*spec.sub.ratio, spec.sub.gain);
+
+  // --- vibrato / drift (LFO aditivo sobre frecuencia) ---
+  if(spec.vibrato){
+    live.filter(n=>n instanceof OscillatorNode).forEach(o=>{
+      lfoTo(o.frequency, spec.vibrato.rate, freq*spec.vibrato.depthPct, o.frequency.value);
+    });
+  }
+  if(spec.drift){
+    const toneOscs = live.filter(n=>n instanceof OscillatorNode);
+    spec.drift.rates.forEach((rate,i)=>{
+      const target = toneOscs[i]; if(!target) return;
+      lfoTo(target.frequency, rate, freq*spec.drift.depthPct, target.frequency.value);
+    });
+  }
+
+  // --- FM ---
+  if(spec.fm){
+    const mod = actx.createOscillator(); mod.type="sine"; mod.frequency.value = freq*spec.fm.ratio; mod.start(t0); live.push(mod);
+    const idxGain = actx.createGain(); idxGain.gain.value=0;
+    mod.connect(idxGain);
+    const carrier = actx.createOscillator(); carrier.type="sine"; carrier.frequency.setValueAtTime(freq,t0);
+    idxGain.connect(carrier.frequency);
+    carrier.start(t0); live.push(carrier);
+    const cg = actx.createGain(); cg.gain.value=1; carrier.connect(cg); cg.connect(toneBus);
+    const idxCtl = scheduleEnv(idxGain.gain, t0, spec.fm.index, 0, freq*spec.fm.ratio*spec.fm.indexScale, fixedDur);
+    idxCtl.auto? ends.push(idxCtl.end) : releaseFns.push(idxCtl);
+    if(spec.fm.extra){
+      const ex=spec.fm.extra;
+      const mod2=actx.createOscillator(); mod2.type="sine"; mod2.frequency.value=freq*spec.fm.ratio; mod2.start(t0); live.push(mod2);
+      const idx2=actx.createGain(); idx2.gain.value=0; mod2.connect(idx2);
+      const car2=actx.createOscillator(); car2.type="sine"; car2.frequency.setValueAtTime(freq*ex.detuneRatio,t0);
+      idx2.connect(car2.frequency); car2.start(t0); live.push(car2);
+      const cg2=actx.createGain(); cg2.gain.value=ex.mix; car2.connect(cg2); cg2.connect(toneBus);
+      const idx2Ctl = scheduleEnv(idx2.gain, t0, spec.fm.index, 0, freq*spec.fm.ratio*spec.fm.indexScale*ex.indexScale2, fixedDur);
+      idx2Ctl.auto? ends.push(idx2Ctl.end) : releaseFns.push(idx2Ctl);
+    }
+  }
+
+  // --- ruido ---
+  (spec.noise||[]).forEach(n=>{
+    const f = typeof n.freq==="function" ? n.freq(freq) : freq;
+    const layer = noiseLayer(n.filterType, f, n.Q, n.microEnv? 0 : n.gain);
+    if(n.microEnv) scheduleEnv(layer.gain.gain, t0, n.microEnv, 0, n.gain, fixedDur);
+  });
+
+  // --- pitch envelope (empuje de afinacion, ej. pluck_bass) ---
+  if(spec.pitchEnv){
+    live.filter(n=>n instanceof OscillatorNode).forEach(o=>{
+      scheduleEnv(o.frequency, t0, spec.pitchEnv.env, o.frequency.value, o.frequency.value*spec.pitchEnv.mult, fixedDur);
+    });
+  }
+
+  let stage = toneBus;
+
+  // --- distorsion ---
+  if(spec.distortion){
+    const ws=actx.createWaveShaper(); ws.curve=makeDistCurve(spec.distortion.drive); ws.oversample="2x";
+    stage.connect(ws); stage=ws;
+  }
+
+  // --- formantes (bandpass en paralelo) ---
+  if(spec.formants){
+    const sum=actx.createGain(); sum.gain.value=1;
+    spec.formants.forEach(f=>{
+      const bp=actx.createBiquadFilter(); bp.type="bandpass"; bp.frequency.value=f.freq; bp.Q.value=f.Q;
+      const g=actx.createGain(); g.gain.value=f.gain;
+      stage.connect(bp); bp.connect(g); g.connect(sum);
+    });
+    stage=sum;
+  }
+  // --- filtro principal (estatico / con envolvente / con LFO) ---
+  else if(spec.filter){
+    const nBiquads = Math.max(1, Math.round((spec.filter.order||2)/2));
+    let cur = stage;
+    for(let i=0;i<nBiquads;i++){
+      const f=actx.createBiquadFilter(); f.type=spec.filter.type||"lowpass"; f.Q.value=spec.filter.Q||0.8;
+      f.frequency.value = spec.filter.base;
+      cur.connect(f); cur=f;
+      if(i===0){
+        if(spec.filter.env){
+          const fCtl = scheduleEnv(f.frequency, t0, spec.filter.env, spec.filter.base, spec.filter.envAmount, fixedDur);
+          fCtl.auto? ends.push(fCtl.end) : releaseFns.push(fCtl);
+        }
+        if(spec.filter.lfo) lfoTo(f.frequency, spec.filter.lfo.rate, spec.filter.lfo.depth*0.5, spec.filter.base+spec.filter.lfo.depth*0.5);
+      }
+    }
+    stage=cur;
+  }
+
+  // --- envolvente de amplitud principal ---
+  const ampGain = actx.createGain(); ampGain.gain.value=0;
+  stage.connect(ampGain);
+  const ampCtl = scheduleEnv(ampGain.gain, t0, spec.env, 0, spec.gain*2.4, fixedDur);
+  ampCtl.auto? ends.push(ampCtl.end) : releaseFns.push(ampCtl);
+
+  // --- salida: seco + sends de reverb/delay ---
+  ampGain.connect(masterGain);
+  if(spec.reverbSend){ const s=actx.createGain(); s.gain.value=spec.reverbSend; ampGain.connect(s); s.connect(reverbNode); }
+  if(spec.delaySend){ const s=actx.createGain(); s.gain.value=spec.delaySend; ampGain.connect(s); s.connect(delayNode); }
+
+  // nota sostenida (teclado en vivo): hay que esperar a soltarla para
+  // liberar TODAS las envolventes ADSR abiertas (amplitud, filtro, indice FM)
+  if(releaseFns.length){
+    return {
+      release(tOff){
+        releaseFns.forEach(c=>c.release(tOff));
+        const stopAt = tOff + spec.env.release + 0.15;
+        live.forEach(n=>n.stop(stopAt));
+      },
+      auto:false
+    };
+  }
+  const stopAt = Math.max(...ends)+0.15;
+  live.forEach(n=>n.stop(stopAt));
+  return { release(){}, auto:true };
+}
+
+function triggerNote(spec, midiNote, t0, dur){ buildVoice(spec, midiNote, t0, dur); }
+
+/* =====================================================================
+   PRESETS -- puerto de pads/, bass/, leads/ y pluck/. Los numeros
+   (ratios, cutoffs, tiempos de envolvente) vienen directos de los
+   strings Faust de cada *.py.
+===================================================================== */
+const AR = (attack,release)=>({attack,release});
+const ADSR = (attack,decay,sustain,release)=>({attack,decay,sustain,release});
+
+const PRESETS = {
+  pads: { label:"Pads", cat:"pads", items:[
+    { key:"warm", name:"Warm", wave:"sine", desc:"Triangulos + sub-octava, lowpass suave.",
+      spec:{ osc:[{type:"triangle",ratio:1,gain:1},{type:"triangle",ratio:1.005,gain:0.6}], sub:{type:"sine",ratio:0.5,gain:0.35},
+        filter:{type:"lowpass",base:1800,Q:0.7,order:2}, env:ADSR(1.2,0.5,0.75,2.0), gain:0.25, reverbSend:0.25 } },
+    { key:"string", name:"String", wave:"saw", desc:"5 sierras detuneadas, ensemble de cuerdas.",
+      spec:{ osc:[{type:"sawtooth",ratio:1,gain:1},{type:"sawtooth",ratio:1.004,gain:1},{type:"sawtooth",ratio:0.996,gain:1},
+        {type:"sawtooth",ratio:1.008,gain:0.5},{type:"sawtooth",ratio:0.992,gain:0.5}],
+        filter:{type:"lowpass",base:3200,Q:0.7,order:3}, env:ADSR(0.6,0.3,0.8,1.4), gain:0.14, reverbSend:0.2 } },
+    { key:"choir", name:"Choir", wave:"saw", desc:"Formantes bandpass + vibrato, timbre vocal.",
+      spec:{ osc:[{type:"sawtooth",ratio:1,gain:1},{type:"sawtooth",ratio:1.003,gain:0.7}], vibrato:{rate:5.2,depthPct:0.008},
+        formants:[{freq:700,Q:10,gain:1},{freq:1150,Q:10,gain:0.6},{freq:2600,Q:10,gain:0.3}],
+        env:ADSR(0.8,0.4,0.75,1.8), gain:0.2, reverbSend:0.3 } },
+    { key:"shimmer", name:"Shimmer", wave:"sine", desc:"Capas agudas x4/x6/x8, mucho reverb.",
+      spec:{ osc:[{type:"sine",ratio:1,gain:1},{type:"sine",ratio:1.003,gain:0.5},{type:"sine",ratio:4.01,gain:0.25},
+        {type:"sine",ratio:6.02,gain:0.12},{type:"sine",ratio:8.03,gain:0.06}],
+        filter:{type:"highpass",base:300,Q:0.7,order:2}, env:ADSR(1.6,0.6,0.7,2.5), gain:0.2, reverbSend:0.45 } },
+    { key:"dark", name:"Dark", wave:"sine", desc:"LFO lento en el filtro, fundamental grave.",
+      spec:{ osc:[{type:"square",ratio:1,gain:0.3},{type:"sine",ratio:1.997,gain:0.2}], sub:{type:"sine",ratio:0.5,gain:0.6},
+        filter:{type:"lowpass",base:400,Q:0.7,order:4,lfo:{rate:0.08,depth:500}}, env:ADSR(2.0,0.8,0.6,3.0), gain:0.225, reverbSend:0.3 } },
+    { key:"brass", name:"Brass", wave:"saw", desc:"Swell de filtro al ataque, caracter de metales.",
+      spec:{ osc:[{type:"sawtooth",ratio:1,gain:1},{type:"sawtooth",ratio:0.998,gain:0.8}],
+        filter:{type:"lowpass",base:400,Q:0.7,order:3,envAmount:4500,env:ADSR(0.25,0.2,0.85,0.6)},
+        env:ADSR(0.15,0.3,0.8,0.9), gain:0.16, reverbSend:0.15 } },
+    { key:"analog", name:"Analog", wave:"saw", desc:"Drift de afinacion + saturacion suave, vintage.",
+      spec:{ osc:[{type:"sawtooth",ratio:1,gain:1},{type:"sawtooth",ratio:0.997,gain:0.8},{type:"triangle",ratio:2,gain:0.15}],
+        drift:{rates:[0.13,0.11],depthPct:0.004}, distortion:{drive:1.8},
+        filter:{type:"lowpass",base:2200,Q:0.7,order:2}, env:ADSR(0.9,0.4,0.75,1.8), gain:0.2, reverbSend:0.2 } },
+    { key:"noise", name:"Noise", wave:"noise", desc:"Ruido filtrado en vez de oscilador tonal.",
+      spec:{ osc:[{type:"sine",ratio:1,gain:0.3}],
+        noise:[{filterType:"bandpass",freq:f=>f,Q:25,gain:1},{filterType:"bandpass",freq:f=>f*2,Q:15,gain:0.5}],
+        env:ADSR(1.5,0.6,0.7,2.2), gain:0.25, reverbSend:0.3 } },
+    { key:"drone", name:"Drone", wave:"sine", desc:"Casi sin ataque/decay, fondo continuo.",
+      spec:{ osc:[{type:"sine",ratio:1,gain:1},{type:"sine",ratio:1.001,gain:0.7},{type:"sine",ratio:2.003,gain:0.2}],
+        sub:{type:"sine",ratio:0.5,gain:0.5}, filter:{type:"lowpass",base:1500,Q:0.7,order:2},
+        env:ADSR(3.0,0.1,1.0,4.0), gain:0.2, reverbSend:0.3 } },
+    { key:"fm", name:"FM", wave:"fm", desc:"Portadora modulada, indice en ADSR.",
+      spec:{ fm:{ratio:2.01, index:ADSR(1.0,0.6,0.4,1.5), indexScale:2.5, extra:{detuneRatio:1.003, indexScale2:0.9, mix:0.5}},
+        env:ADSR(0.8,0.4,0.7,1.8), gain:0.2, reverbSend:0.25 } },
+    { key:"additive", name:"Additive", wave:"sine", desc:"7 armonicos puros con pesos decrecientes.",
+      spec:{ osc:[{type:"sine",ratio:1,gain:1},{type:"sine",ratio:2,gain:0.5},{type:"sine",ratio:3,gain:0.33},{type:"sine",ratio:4,gain:0.22},
+        {type:"sine",ratio:5,gain:0.14},{type:"sine",ratio:6,gain:0.09},{type:"sine",ratio:7,gain:0.05}],
+        env:ADSR(1.0,0.5,0.7,2.0), gain:0.14, reverbSend:0.2 } },
+    { key:"granular", name:"Granular", wave:"noise", desc:"Textura aproximada con LFOs de tremolo desincronizados.",
+      spec:{ osc:[{type:"sine",ratio:1,gain:0.6,tremolo:{rate:7.3}},{type:"sine",ratio:1.5,gain:0.24,tremolo:{rate:7.3}},
+        {type:"sine",ratio:3,gain:0.2,tremolo:{rate:5.1}}],
+        noise:[{filterType:"bandpass",freq:f=>f*2,Q:20,gain:0.3,microEnv:null}],
+        env:ADSR(1.0,0.5,0.7,2.0), gain:0.175, reverbSend:0.3 } },
+  ]},
+  bass: { label:"Bass", cat:"bass", items:[
+    { key:"sub", name:"Sub", wave:"sine", desc:"Seno limpio + 2o armonico, sin filtro.",
+      spec:{ osc:[{type:"sine",ratio:1,gain:1},{type:"sine",ratio:2,gain:0.15}], env:AR(0.005,0.3), gain:0.3, reverbSend:0.02 } },
+    { key:"reese", name:"Reese", wave:"saw", desc:"Sierras detuneadas batiendo + resonante.",
+      spec:{ osc:[{type:"sawtooth",ratio:0.99,gain:1},{type:"sawtooth",ratio:1.01,gain:1},{type:"sawtooth",ratio:1,gain:0.5}],
+        filter:{type:"lowpass",base:800,Q:5,order:2}, env:AR(0.01,0.3), gain:0.16, reverbSend:0.03 } },
+    { key:"acid", name:"Acid", wave:"saw", desc:"Sierra + filtro muy resonante (formula 303).",
+      spec:{ osc:[{type:"sawtooth",ratio:1,gain:1}],
+        filter:{type:"lowpass",base:300,Q:18,order:2,envAmount:3500,env:AR(0.005,0.25)}, env:AR(0.005,0.3), gain:0.15, reverbSend:0.02 } },
+    { key:"fm", name:"FM", wave:"fm", desc:"Ratio 1:1, indice cayendo tras el ataque.",
+      spec:{ fm:{ratio:1.0, index:AR(0.005,0.2), indexScale:4}, env:AR(0.005,0.3), gain:0.225, reverbSend:0.02 } },
+    { key:"wobble", name:"Wobble", wave:"saw", desc:"LFO rapido en el filtro (dubstep).",
+      spec:{ osc:[{type:"sawtooth",ratio:1,gain:1},{type:"sawtooth",ratio:1.01,gain:0.6}],
+        filter:{type:"lowpass",base:200,Q:8,order:2,lfo:{rate:6,depth:3000}}, env:AR(0.01,0.3), gain:0.175, reverbSend:0.02 } },
+    { key:"growl", name:"Growl", wave:"saw", desc:"Saturacion + LFO en filtro, mas sucio que wobble.",
+      spec:{ osc:[{type:"sawtooth",ratio:1,gain:1},{type:"square",ratio:0.5,gain:0.6}], distortion:{drive:4},
+        filter:{type:"lowpass",base:300,Q:10,order:2,lfo:{rate:9,depth:2500}}, env:AR(0.005,0.25), gain:0.2, reverbSend:0.02 } },
+    { key:"analog", name:"Analog", wave:"saw", desc:"Sierra + sub calida, filtro 4 polos con envolvente.",
+      spec:{ osc:[{type:"sawtooth",ratio:1,gain:1},{type:"sawtooth",ratio:1.005,gain:0.5}], sub:{type:"sine",ratio:0.5,gain:0.5},
+        filter:{type:"lowpass",base:400,Q:0.7,order:4,envAmount:2500,env:AR(0.005,0.2)}, env:AR(0.01,0.35), gain:0.225, reverbSend:0.02 } },
+    { key:"pluck_bass", name:"Pluck", wave:"sine", desc:"Envolvente de pitch (pop tipo 808).",
+      spec:{ osc:[{type:"sine",ratio:1,gain:1},{type:"square",ratio:1,gain:0.3}],
+        pitchEnv:{env:AR(0.001,0.05), mult:3}, env:AR(0.001,0.15), gain:0.25, reverbSend:0.02 } },
+  ]},
+  leads: { label:"Leads", cat:"leads", items:[
+    { key:"supersaw", name:"Supersaw", wave:"saw", desc:"7 sierras detuneadas, filtro abriendose.",
+      spec:{ osc:[{type:"sawtooth",ratio:1,gain:1},{type:"sawtooth",ratio:1.007,gain:1},{type:"sawtooth",ratio:0.993,gain:1},
+        {type:"sawtooth",ratio:1.014,gain:0.7},{type:"sawtooth",ratio:0.986,gain:0.7},{type:"sawtooth",ratio:1.021,gain:0.5},{type:"sawtooth",ratio:0.979,gain:0.5}],
+        filter:{type:"lowpass",base:800,Q:0.9,order:3,envAmount:6000,env:ADSR(0.03,0.25,0.7,0.2)},
+        env:ADSR(0.01,0.15,0.8,0.25), gain:0.11, reverbSend:0.2 } },
+    { key:"square", name:"Square", wave:"square", desc:"Chiptune: cuadrada + sub, sin filtro.",
+      spec:{ osc:[{type:"square",ratio:1,gain:1},{type:"square",ratio:0.5,gain:0.3}], env:ADSR(0.002,0.05,0.85,0.06), gain:0.14, reverbSend:0.08 } },
+    { key:"pwm", name:"PWM", wave:"square", desc:"Aprox: cuadrada con LFO de filtro (duty simulado).",
+      spec:{ osc:[{type:"square",ratio:1,gain:1}], filter:{type:"lowpass",base:3500,Q:0.8,order:2,lfo:{rate:2.5,depth:5000}},
+        env:ADSR(0.02,0.2,0.75,0.3), gain:0.15, reverbSend:0.2 } },
+    { key:"fm", name:"FM", wave:"fm", desc:"Ratio 2:1, metalico/campana.",
+      spec:{ fm:{ratio:2.0, index:ADSR(0.02,0.3,0.6,0.2), indexScale:3.0}, env:ADSR(0.005,0.15,0.8,0.2), gain:0.175, reverbSend:0.2 } },
+    { key:"sync", name:"Sync", wave:"saw", desc:"Aprox: ratio de 2o oscilador cayendo de 4x a 1x.",
+      spec:{ osc:[{type:"sawtooth",ratio:1,gain:0.4}], syncRatio:{env:ADSR(0.02,0.3,0.5,0.2), mult:3},
+        filter:{type:"lowpass",base:7000,Q:0.7,order:2}, env:ADSR(0.005,0.2,0.75,0.25), gain:0.15, reverbSend:0.2 } },
+    { key:"analog", name:"Analog", wave:"saw", desc:"Sierra + triangulo, subtractivo tipo Juno/Moog.",
+      spec:{ osc:[{type:"sawtooth",ratio:1,gain:1},{type:"sawtooth",ratio:1.003,gain:0.6},{type:"triangle",ratio:0.5,gain:0.3}],
+        filter:{type:"lowpass",base:500,Q:0.8,order:3,envAmount:3500,env:ADSR(0.03,0.3,0.55,0.25)},
+        env:ADSR(0.015,0.2,0.75,0.3), gain:0.175, reverbSend:0.15 } },
+    { key:"distortion", name:"Distortion", wave:"saw", desc:"Sierras saturadas, lead tipo rock.",
+      spec:{ osc:[{type:"sawtooth",ratio:1,gain:1},{type:"sawtooth",ratio:1.006,gain:0.8}], distortion:{drive:6},
+        filter:{type:"lowpass",base:1500,Q:0.8,order:2,envAmount:4000,env:ADSR(0.01,0.2,0.7,0.2)},
+        env:ADSR(0.005,0.15,0.85,0.2), gain:0.15, reverbSend:0.15 } },
+    { key:"vocal", name:"Vocal", wave:"saw", desc:"Formantes + vibrato, mas protagonista que choir_pad.",
+      spec:{ osc:[{type:"sawtooth",ratio:1,gain:1},{type:"sawtooth",ratio:1.003,gain:0.7}], vibrato:{rate:5.5,depthPct:0.012},
+        formants:[{freq:800,Q:8,gain:1},{freq:1400,Q:8,gain:0.7},{freq:2900,Q:8,gain:0.35}],
+        env:ADSR(0.02,0.2,0.75,0.3), gain:0.16, reverbSend:0.2 } },
+  ]},
+  pluck: { label:"Pluck", cat:"pluck", items:[
+    { key:"marimba", name:"Marimba", wave:"sine", desc:"Fundamental + parciales inarmonicos de barra.",
+      spec:{ osc:[{type:"sine",ratio:1,gain:1},{type:"sine",ratio:3.93,gain:0.35},{type:"sine",ratio:9.2,gain:0.15}],
+        env:AR(0.001,0.35), gain:0.3, reverbSend:0.15 } },
+    { key:"kalimba", name:"Kalimba", wave:"sine", desc:"Parciales de tine metalica + zumbido.",
+      spec:{ osc:[{type:"sine",ratio:1,gain:1},{type:"sine",ratio:2.76,gain:0.4},{type:"sine",ratio:5.4,gain:0.2}],
+        noise:[{filterType:null,freq:f=>f,Q:1,gain:0.1,microEnv:AR(0.0005,0.02)}],
+        env:AR(0.0008,0.6), gain:0.275, reverbSend:0.15 } },
+    { key:"music_box", name:"Music Box", wave:"sine", desc:"Armonicos puros, cola de shimmer mas larga que el cuerpo.",
+      spec:{ osc:[{type:"sine",ratio:1,gain:1},{type:"sine",ratio:2,gain:0.5,env2:true},{type:"sine",ratio:4,gain:0.3,env2:true},{type:"sine",ratio:8,gain:0.15,env2:true}],
+        env:AR(0.0005,0.15), env2:AR(0.001,0.9), gain:0.25, reverbSend:0.3 } },
+    { key:"fm", name:"FM", wave:"fm", desc:"Ratio 3:1, indice cayendo rapido (EP/campana).",
+      spec:{ fm:{ratio:3.0, index:AR(0.001,0.25), indexScale:3.5}, env:AR(0.002,0.35), gain:0.275, reverbSend:0.15 } },
+    { key:"analog", name:"Analog", wave:"saw", desc:"Sierra + filtro resonante con envolvente rapida.",
+      spec:{ osc:[{type:"sawtooth",ratio:1,gain:1},{type:"sawtooth",ratio:1.005,gain:0.7}],
+        filter:{type:"lowpass",base:200,Q:3,order:2,envAmount:6000,env:AR(0.001,0.18)}, env:AR(0.001,0.3), gain:0.2, reverbSend:0.15 } },
+  ]},
+};
+
+/* music_box y sync necesitan una segunda envolvente / envolvente de
+   frecuencia -- se resuelven como casos especiales dentro de buildVoice
+   via los campos env2 / syncRatio detectados abajo. */
+(function patchSpecialCases(){
+  const origBuild = buildVoice;
+  buildVoice = function(spec, midiNote, t0, fixedDur){
+    const isMultiEnv = !!(spec.osc && spec.osc.some(o=>o.env2)); // music_box: rama fundamental vs shimmer
+    const isSync = !!spec.syncRatio; // sync_lead: 2o oscilador con la frecuencia en envolvente
+    if(!isMultiEnv && !isSync) return origBuild(spec, midiNote, t0, fixedDur);
+
+    const freq = midiToFreq(midiNote);
+    const toneBus = actx.createGain();
+    const live=[];
+    let ends=[t0];
+    function osc(type,f,gainVal){ const o=actx.createOscillator(); o.type=type; o.frequency.setValueAtTime(f,t0);
+      const g=actx.createGain(); g.gain.value=gainVal; o.connect(g); g.connect(toneBus); o.start(t0); live.push(o); return {node:o,gain:g}; }
+
+    if(isMultiEnv){
+      // cada rama de osciladores lleva su propia envolvente (cuerpo vs shimmer),
+      // no hay una envolvente final compartida
+      (spec.osc||[]).forEach(o=>{
+        const built = osc(o.type, freq*o.ratio, 0);
+        const env = o.env2? spec.env2 : spec.env;
+        const c = scheduleEnv(built.gain.gain, t0, env, 0, o.gain, fixedDur);
+        ends.push(c.end);
+      });
+    } else {
+      // sync_lead: gain estatico por rama, la envolvente de amplitud se
+      // aplica una sola vez al final (igual que el resto de patches)
+      (spec.osc||[]).forEach(o=> osc(o.type, freq*o.ratio, o.gain));
+    }
+
+    const releaseFns = []; // controles con hold abierto (nota sostenida por teclado)
+
+    if(isSync){
+      const o2 = osc("sawtooth", freq, 0.6); // segundo oscilador de la mezcla (sync sweep)
+      const freqCtl = scheduleEnv(o2.node.frequency, t0, spec.syncRatio.env, freq, freq*spec.syncRatio.mult, fixedDur);
+      freqCtl.auto? ends.push(freqCtl.end) : releaseFns.push(freqCtl);
+    }
+
+    let stage=toneBus;
+    if(spec.distortion){ const ws=actx.createWaveShaper(); ws.curve=makeDistCurve(spec.distortion.drive); ws.oversample="2x"; stage.connect(ws); stage=ws; }
+    if(spec.filter){
+      const f=actx.createBiquadFilter(); f.type=spec.filter.type||"lowpass"; f.Q.value=spec.filter.Q||0.8; f.frequency.value=spec.filter.base;
+      stage.connect(f); stage=f;
+      if(spec.filter.env) scheduleEnv(f.frequency, t0, spec.filter.env, spec.filter.base, spec.filter.envAmount, fixedDur);
+      if(spec.filter.lfo){ const l=actx.createOscillator(); l.type="sine"; l.frequency.value=spec.filter.lfo.rate;
+        const dg=actx.createGain(); dg.gain.value=spec.filter.lfo.depth*0.5; l.connect(dg); dg.connect(f.frequency);
+        f.frequency.setValueAtTime(spec.filter.base+spec.filter.lfo.depth*0.5, t0); l.start(t0); live.push(l); }
+    }
+    const ampGain = actx.createGain();
+    stage.connect(ampGain);
+    if(isMultiEnv){
+      ampGain.gain.value = spec.gain*2.4; // music_box: nivel fijo, las envolventes ya van por rama
+    } else {
+      const ampCtl = scheduleEnv(ampGain.gain, t0, spec.env, 0, spec.gain*2.4, fixedDur);
+      ampCtl.auto? ends.push(ampCtl.end) : releaseFns.push(ampCtl);
+    }
+
+    ampGain.connect(masterGain);
+    if(spec.reverbSend){ const s=actx.createGain(); s.gain.value=spec.reverbSend; ampGain.connect(s); s.connect(reverbNode); }
+    if(spec.delaySend){ const s=actx.createGain(); s.gain.value=spec.delaySend; ampGain.connect(s); s.connect(delayNode); }
+
+    if(releaseFns.length){
+      return { release(tOff){
+        releaseFns.forEach(c=>c.release(tOff));
+        const stopAt = tOff + spec.env.release + 0.15;
+        live.forEach(n=>n.stop(stopAt));
+      }, auto:false };
+    }
+    const stopAt = Math.max(...ends)+0.15;
+    live.forEach(n=>n.stop(stopAt));
+    return { release(){}, auto:true };
+  };
+})();
+
+/* =====================================================================
+   DEMOS -- mismas progresiones/patrones que */common.py a 100 BPM
+===================================================================== */
+const CHORDS = [[57,60,64],[53,57,60],[60,64,67],[55,59,62]]; // Am F C G
+const ROOTS = [45,41,48,43];
+const MELODY = [[69,72,74,72],[65,69,72,69],[67,71,72,71],[67,71,74,71]];
+const RITMO = [[0,1.5],[1.5,0.5],[2,1],[3,0.5],[3.5,0.5]];
+const IDX_SEQ = [0,1,2,1,0,1,2,1];
+const DEMO_BPM = 100;
+const beatSec = b => b*60/DEMO_BPM;
+
+function playDemo(catKey, spec){
+  ensureAudio();
+  const t0 = actx.currentTime+0.05;
+  if(catKey==="pads"){
+    CHORDS.forEach((chord,i)=> chord.forEach(n=> triggerNote(spec, n, t0+beatSec(i*4), beatSec(4))));
+  } else if(catKey==="leads"){
+    MELODY.forEach((notes,i)=> notes.forEach((n,j)=> triggerNote(spec, n, t0+beatSec(i*4+j), beatSec(0.9))));
+  } else if(catKey==="bass"){
+    ROOTS.forEach((root,i)=> RITMO.forEach(([s,d])=> triggerNote(spec, root, t0+beatSec(i*4+s), beatSec(d*0.9))));
+  } else if(catKey==="pluck"){
+    CHORDS.forEach((chord,i)=>{
+      const tonos = chord.map(n=>n+12);
+      IDX_SEQ.forEach((idx,j)=> triggerNote(spec, tonos[idx], t0+beatSec(i*4+j*0.5), beatSec(0.45)));
+    });
+  }
+}
+
+/* =====================================================================
+   TECLADO EN VIVO
+===================================================================== */
+const KEY_MAP = { a:60,w:61,s:62,e:63,d:64,f:65,t:66,g:67,y:68,h:69,u:70,j:71,k:72,o:73,l:74,p:75,";":76 };
+const WHITE_NOTES = [60,62,64,65,67,69,71,72,74,76];
+const BLACK_AFTER = {60:61,62:63,65:66,67:68,69:70,72:73,74:75}; // negra tras esta blanca
+let armed = null; // {catKey, spec, name}
+const activeVoices = new Map();
+
+function setArmed(catKey, item, moduleEl){
+  document.querySelectorAll(".module.armed").forEach(m=>m.classList.remove("armed"));
+  document.querySelectorAll('[data-armed="1"]').forEach(b=>b.removeAttribute("data-armed"));
+  moduleEl.classList.add("armed");
+  moduleEl.querySelector(".btn-arm").setAttribute("data-armed","1");
+  armed = { catKey, spec:item.spec, name:item.name };
+  els.armedName.textContent = item.name;
+  els.armedCat.textContent = PRESETS[catKey].label;
+  els.armedCat.style.setProperty("--tagcolor", `var(--cat-${catKey})`);
+}
+
+function noteOn(note){
+  if(!armed || activeVoices.has(note)) return;
+  ensureAudio();
+  const t0 = actx.currentTime+0.008;
+  activeVoices.set(note, buildVoice(armed.spec, note, t0, null));
+  document.querySelectorAll(`.key[data-note="${note}"]`).forEach(k=>k.classList.add("active"));
+}
+function noteOff(note){
+  const h = activeVoices.get(note);
+  if(!h) return;
+  activeVoices.delete(note);
+  h.release(actx.currentTime+0.008);
+  document.querySelectorAll(`.key[data-note="${note}"]`).forEach(k=>k.classList.remove("active"));
+}
+
+/* =====================================================================
+   OSCILOSCOPIO
+===================================================================== */
+function drawScope(){
+  requestAnimationFrame(drawScope);
+  const c = els.scope.getContext("2d");
+  const w=els.scope.width, h=els.scope.height;
+  const styles = getComputedStyle(document.documentElement);
+  c.clearRect(0,0,w,h);
+  c.strokeStyle = styles.getPropertyValue("--accent").trim() || "#d98e3f";
+  c.lineWidth = 1.5;
+  c.beginPath();
+  if(analyser){
+    const data = new Uint8Array(analyser.fftSize);
+    analyser.getByteTimeDomainData(data);
+    for(let i=0;i<data.length;i++){
+      const x = i/(data.length-1)*w;
+      const y = (data[i]/255)*h;
+      i===0? c.moveTo(x,y) : c.lineTo(x,y);
+    }
+  } else {
+    c.moveTo(0,h/2); c.lineTo(w,h/2);
+  }
+  c.stroke();
+}
+
+/* =====================================================================
+   ICONOS DE ONDA (informativos: caracter del oscilador principal)
+===================================================================== */
+function waveIcon(type){
+  const paths = {
+    sine:   "M1,8 C4,1 8,1 10,8 C12,15 16,15 19,8",
+    saw:    "M1,14 L7,2 L7,14 L13,2 L13,14 L19,2",
+    square: "M1,13 L1,3 L7,3 L7,13 L13,13 L13,3 L19,3",
+    noise:  "M1,8 L3,3 L5,12 L7,5 L9,14 L11,4 L13,10 L15,2 L17,11 L19,7",
+    fm:     "M1,8 C2,2 4,14 6,8 C7,3 9,13 11,8 C12,2 14,15 16,7 C17,4 18,11 19,8",
+    formant:"M1,10 C4,2 6,2 8,10 C10,16 12,3 14,3 C16,3 17,13 19,10",
+  };
+  return `<svg width="20" height="16" viewBox="0 0 20 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="${paths[type]||paths.sine}"/></svg>`;
+}
+
+/* =====================================================================
+   RENDER DE UI
+===================================================================== */
+function buildRacks(){
+  const racks = document.getElementById("racks");
+  Object.entries(PRESETS).forEach(([catKey, cat])=>{
+    const section = document.createElement("section");
+    section.className = "rack"; section.style.setProperty("--cat", `var(--cat-${catKey})`);
+    section.innerHTML = `<div class="rack-head"><h2>${cat.label}</h2><span class="rack-count">${cat.items.length} patches</span></div>
+      <div class="module-grid"></div>`;
+    const grid = section.querySelector(".module-grid");
+    cat.items.forEach(item=>{
+      const el = document.createElement("article");
+      el.className = "module";
+      el.innerHTML = `
+        <div class="module-top">${waveIcon(item.wave)}<h3>${item.name}</h3></div>
+        <p class="module-desc">${item.desc}</p>
+        <div class="module-actions">
+          <button class="btn btn-arm" type="button">Armar</button>
+          <button class="btn btn-demo" type="button">&#9654; Demo</button>
+        </div>`;
+      el.querySelector(".btn-arm").addEventListener("click", ()=> setArmed(catKey, item, el));
+      el.querySelector(".btn-demo").addEventListener("click", ()=> playDemo(catKey, item.spec));
+      grid.appendChild(el);
+    });
+    racks.appendChild(section);
+  });
+  // arma el primer preset por defecto para que el teclado funcione ya
+  const firstModule = racks.querySelector(".module");
+  const firstCat = Object.keys(PRESETS)[0];
+  setArmed(firstCat, PRESETS[firstCat].items[0], firstModule);
+}
+
+function buildKeyboard(){
+  const kb = document.getElementById("keyboard");
+  const whiteW = 36;
+  WHITE_NOTES.forEach((n,i)=>{
+    const k=document.createElement("div"); k.className="key"; k.dataset.note=n; k.textContent=noteName(n);
+    kb.appendChild(k);
+    if(BLACK_AFTER[n]!=null){
+      const bn=BLACK_AFTER[n];
+      const bk=document.createElement("div"); bk.className="key black"; bk.dataset.note=bn;
+      bk.style.left = `${(i+1)*whiteW - 11}px`;
+      kb.appendChild(bk);
+    }
+  });
+  kb.querySelectorAll(".key").forEach(k=>{
+    const note = parseInt(k.dataset.note,10);
+    k.addEventListener("pointerdown", e=>{ e.preventDefault(); k.setPointerCapture(e.pointerId); noteOn(note); });
+    k.addEventListener("pointerup", ()=> noteOff(note));
+    k.addEventListener("pointercancel", ()=> noteOff(note));
+    k.addEventListener("pointerleave", e=>{ if(e.buttons) noteOff(note); });
+  });
+}
+function noteName(m){
+  const names=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+  return names[m%12]+Math.floor(m/12-1);
+}
+
+window.addEventListener("keydown", e=>{
+  if(e.repeat) return;
+  const note = KEY_MAP[e.key.toLowerCase()];
+  if(note==null) return;
+  noteOn(note);
+});
+window.addEventListener("keyup", e=>{
+  const note = KEY_MAP[e.key.toLowerCase()];
+  if(note==null) return;
+  noteOff(note);
+});
+
+/* =====================================================================
+   INIT
+===================================================================== */
+["masterVol","masterVerb","masterDelay","scope","audioHint","armedName","armedCat"].forEach(id=> els[id]=document.getElementById(id));
+els.masterVol.addEventListener("input", ()=>{ if(masterGain) masterGain.gain.value=parseFloat(els.masterVol.value); });
+els.masterVerb.addEventListener("input", ()=>{ if(reverbOut) reverbOut.gain.value=parseFloat(els.masterVerb.value); });
+els.masterDelay.addEventListener("input", ()=>{ if(delayOut) delayOut.gain.value=parseFloat(els.masterDelay.value); });
+
+buildRacks();
+buildKeyboard();
+drawScope();
+</script>
+</body>
+</html>
