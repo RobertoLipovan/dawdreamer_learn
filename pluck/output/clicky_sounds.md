@@ -1,0 +1,4 @@
+guitar_pluck 
+pizzicato_pluck
+karplus_pluck
+harp_pluck
